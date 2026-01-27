@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # 1. El Servidor Web (Tu API)
+  api:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: netguard-api
+    ports:
+      - "5000:5000"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+    depends_on:
+      - redis
+      - db
+    networks:
+      - backend_net
+
+  # 2. El Trabajador Obrero (Celery Worker) - ¡NUEVO!
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api # Usamos la misma imagen que la API
+    container_name: netguard-worker
+    command: celery -A app.tasks worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+    depends_on:
+      - redis
+      - db
+    networks:
+      - backend_net
+
+  # 3. La Memoria Rápida (Redis) - ¡NUEVO!
+  redis:
+    image: redis:alpine
+    container_name: netguard-redis
+    networks:
+      - backend_net
+
+  # 4. La Base de Datos (Postgres)
+  db:
+    image: postgres:15-alpine
+    container_name: netguard-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend_net
+
+  # 5. El Portero (Nginx)
+  nginx:
+    image: nginx:alpine
+    container_name: netguard-nginx
+    ports:
+      - "80:80"
+    volumes:  # <--- ¡ESTA ES LA PARTE QUE FALTABA!
+      - ./nginx/conf.d:/etc/nginx/conf.d    
+    depends_on:
+      - api
+    networks:
+      - backend_net
+
+networks:
+  backend_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
