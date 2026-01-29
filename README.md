@@ -40,7 +40,9 @@ El sistema fue migrado a un clúster (Minikube) para obtener capacidades avanzad
 
 El clúster está instrumentado con un dashboard personalizado en Grafana para visualizar la salud de los nodos y el consumo de recursos de los pods.
 
-![Grafana Dashboard](LINK_A_TU_FOTO_GRAFANA_AQUI)
+![Grafana Dashboard]
+<img width="1580" height="671" alt="grafana2" src="https://github.com/user-attachments/assets/4e34293e-dcf1-40c8-b9d3-eec3d4d43a8b" />
+
 *(Panel de control mostrando métricas de CPU, Memoria y estado de los Pods)*
 
 ## 🚀 Guía de Inicio (Quick Start)
